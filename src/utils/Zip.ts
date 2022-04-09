@@ -15,8 +15,10 @@ export interface ZipOption {
 export class Zip {
   zipOptions: any = {};
   mimeString: string | undefined = "application/zip";
-  zipWritter:any
+  zipWritter: any
   constructor(options: ZipOption | undefined = {}) {
+    // console.log(options);
+    
     this.zipOptions = options.zipOptions || {};
     this.mimeString = options.mimeString || this.mimeString;
     this.init();
@@ -29,8 +31,8 @@ export class Zip {
     );
   }
 
-  addFile(file: File, addOptions: ZipWriterAddDataOptions = {}) {
-    this.zipWritter.add(
+  async addFile(file: File, addOptions: ZipWriterAddDataOptions = {}) {
+    await this.zipWritter.add(
       file?.name || `default_file_${new Date().getTime()}`,
       new BlobReader(new Blob([file], { type: file?.type || "text/plain" })),
       addOptions
@@ -43,7 +45,6 @@ export class Zip {
     } = {}
   ) {
     this.zipWritter.close().then((data: any) => {
-      // console.log(data);
       saveAs(data, saveOptions?.fileName || `${new Date().getTime()}.zip`);
       this.init();
     });
