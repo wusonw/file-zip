@@ -43,7 +43,7 @@ export class Zip {
     } = {}
   ) {
     this.zipWritter.close().then((data: any) => {
-      console.log(data);
+      // console.log(data);
       saveAs(data, saveOptions?.fileName || `${new Date().getTime()}.zip`);
       this.init();
     });
