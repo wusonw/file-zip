@@ -6,6 +6,8 @@
     @cancel="closeModal"
     :footer="null"
   >
+    <span>已选{{ fileList.length }}个文件，文件总大小为{{ totalSize }}</span>
+
     <a-form
       :model="formState"
       name="validate_other"
@@ -49,7 +51,7 @@
       </a-form-item>
 
       <a-form-item :wrapper-col="{ span: 12, offset: 6 }">
-        <a-button type="primary" html-type="submit">下载到本地</a-button>
+        <a-button type="primary" html-type="submit">压缩</a-button>
       </a-form-item>
     </a-form>
   </a-modal>
@@ -62,12 +64,13 @@ export default defineComponent({
   name: "ZipDownload",
   props: {
     fileList: Array,
+    totalSize: String,
     visible: Boolean,
   },
 
   setup(props, context) {
-    // console.log(props);
-    const { fileList } = toRefs(props);
+    const { fileList, totalSize } = toRefs(props);
+
     const formItemLayout = {
       labelCol: { span: 6 },
       wrapperCol: { span: 14 },
@@ -103,7 +106,8 @@ export default defineComponent({
           total = 0;
         Object.keys(zipProcessMapRef.value).forEach((i) => {
           const pro = zipProcessMapRef.value[i];
-          (process += pro.process), (total += pro.total);
+          process += pro.process;
+          total += pro.total;
         });
         zipPercentRef.value = parseInt(
           ((total === 0 ? 0 : process / total) * 100).toString()
@@ -117,10 +121,11 @@ export default defineComponent({
     });
     const onFinish = async (options: any) => {
       // console.log("onFinish", options);
+      // console.log(totalSize.value);
 
       zipPercentRef.value = 0;
-      zipProcessMapRef.value = {}
-      
+      zipProcessMapRef.value = {};
+
       const zip = new Zip({
         zipOptions: {
           level: options.level / 10,
@@ -130,7 +135,7 @@ export default defineComponent({
       });
 
       await Promise.all(
-         fileList?.value?.map((f: any, index: number) =>
+        fileList?.value?.map((f: any, index: number) =>
           zip.addFile(f.file, {
             ...f.options,
             onprogress: (process, total) => {
@@ -143,7 +148,7 @@ export default defineComponent({
               };
             },
           })
-        )||[]
+        ) || []
       );
 
       await zip.save({

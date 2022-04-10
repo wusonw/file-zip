@@ -1,11 +1,9 @@
 <template>
   <div class="home">
-    <file-selector
-      @onFileListChange="onFileListChange"
-      @doneSelect="visible = true"
-    />
+    <file-selector @doneSelect="doneSelect" />
     <zip-download
       :fileList="state.fileList"
+      :totalSize="state.totalSize"
       :visible="visible"
       @closeModal="visible = false"
     />
@@ -26,18 +24,27 @@ export default defineComponent({
   setup() {
     const state = reactive({
       fileList: [],
+      totalSize: '',
     });
 
     const visible = ref<boolean>(false);
-    const onFileListChange = ({ zipItemFileList }: any) => {
+    const doneSelect = ({ zipItemFileList, totalSize }: any) => {
       state.fileList = zipItemFileList;
+      state.totalSize = totalSize;
+      visible.value = true;
     };
 
     return {
       state,
       visible,
-      onFileListChange,
+      doneSelect,
     };
   },
 });
 </script>
+<style>
+html,
+body {
+  padding: 0 50px;
+}
+</style>
