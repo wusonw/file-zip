@@ -56,7 +56,7 @@
 </template>
 <script lang="ts">
 import { Zip } from "@/utils/Zip";
-import { defineComponent, reactive, ref, toRefs } from "vue";
+import { defineComponent, reactive, ref, toRefs, watch } from "vue";
 
 export default defineComponent({
   name: "ZipDownload",
@@ -67,7 +67,7 @@ export default defineComponent({
 
   setup(props, context) {
     // console.log(props);
-    const { fileList, visible } = toRefs(props);
+    const { fileList } = toRefs(props);
     const formItemLayout = {
       labelCol: { span: 6 },
       wrapperCol: { span: 14 },
@@ -93,6 +93,23 @@ export default defineComponent({
         value: "application/octet-stream",
       },
     ]);
+    const zipProcessMapRef = ref<any>({});
+
+    watch(zipProcessMapRef, () => {
+      if (
+        Object.keys(zipProcessMapRef.value).length === fileList.value?.length
+      ) {
+        let process = 0,
+          total = 0;
+        Object.keys(zipProcessMapRef.value).forEach((i) => {
+          const pro = zipProcessMapRef.value[i];
+          (process += pro.process), (total += pro.total);
+        });
+        zipPercentRef.value = parseInt(
+          ((total === 0 ? 0 : process / total) * 100).toString()
+        );
+      }
+    });
 
     const formState = reactive<Record<string, any>>({
       level: 10,
@@ -102,6 +119,8 @@ export default defineComponent({
       // console.log("onFinish", options);
 
       zipPercentRef.value = 0;
+      zipProcessMapRef.value = {}
+      
       const zip = new Zip({
         zipOptions: {
           level: options.level / 10,
@@ -109,40 +128,24 @@ export default defineComponent({
         },
         mimeString: zipFileTypeRef.value,
       });
-      const fileZipArray =
-        fileList?.value?.map((f: any) => ({ ...f, _total: 0, _process: 0 })) ||
-        [];
-      console.log(fileZipArray);
-
-      fileList?.value?.map((f: any) => ({
-        ...f,
-        _total: 0,
-        _process: 0,
-      })) || [];
 
       await Promise.all(
-        fileZipArray.map((f: any) =>
+         fileList?.value?.map((f: any, index: number) =>
           zip.addFile(f.file, {
             ...f.options,
-            onprogress: (pro, total) => {
-              f._total = total;
-              f._process = pro;
-              let fileProcess = 0,
-                fileTotal = 0;
-              fileZipArray.forEach((file) => {
-                fileTotal += file._total;
-                fileProcess += file._process;
-              });
-
-              zipPercentRef.value = parseInt(
-                (
-                  (fileTotal === 0 ? 0 : fileProcess / fileTotal) * 100
-                ).toString()
-              );
+            onprogress: (process, total) => {
+              zipProcessMapRef.value = {
+                ...zipProcessMapRef.value,
+                [index]: {
+                  process,
+                  total,
+                },
+              };
             },
           })
-        ) || []
+        )||[]
       );
+
       await zip.save({
         fileName: `${options.fileName}${
           zipFileTypeListRef.value.find(
