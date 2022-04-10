@@ -101,8 +101,11 @@ export default defineComponent({
         mimeString: zipFileTypeRef.value,
       });
       const fileZipArray =
-        fileList?.value?.map((f: any) => ({ ...f, _total: 0, _process: 0 })) ||
-        [];
+        fileList?.value?.map((f: any) => ({
+          ...f,
+          _total: 0,
+          _process: 0,
+        })) || [];
       await Promise.all(
         fileZipArray.map((f: any) =>
           zip.addFile(f.file, {
@@ -126,7 +129,7 @@ export default defineComponent({
           })
         ) || []
       );
-      zip.save({
+      await zip.save({
         fileName: `${options.fileName}${
           zipFileTypeListRef.value.find(
             (item) => item.value === zipFileTypeRef.value

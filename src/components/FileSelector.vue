@@ -28,18 +28,16 @@ export default defineComponent({
   setup(props: any, context) {
     const zipItemFileListRef = ref<ZipItemFileType[]>([]);
     const fileList = ref<any>([]);
-    
-
     const beforeUpload: UploadProps["beforeUpload"] = (file) => {
       fileList.value = [...fileList.value, file];
       return false;
     };
 
     const onChange = (chanegd: any) => {
-      zipItemFileListRef.value = chanegd.fileList.map((f: any) => ({
+      zipItemFileListRef.value = fileList?.value?.map((f: any) => ({
         file: f,
         options: {},
-      }));
+      })) || [];
       context.emit("onFileListChange", {
         zipItemFileList: zipItemFileListRef.value,
       });
@@ -50,7 +48,7 @@ export default defineComponent({
       fileList,
       beforeUpload,
       onChange,
-      zipItemFileListRef
+      zipItemFileListRef,
     };
   },
 });
