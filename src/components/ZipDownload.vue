@@ -113,6 +113,13 @@ export default defineComponent({
         fileList?.value?.map((f: any) => ({ ...f, _total: 0, _process: 0 })) ||
         [];
       console.log(fileZipArray);
+
+      fileList?.value?.map((f: any) => ({
+        ...f,
+        _total: 0,
+        _process: 0,
+      })) || [];
+
       await Promise.all(
         fileZipArray.map((f: any) =>
           zip.addFile(f.file, {
@@ -136,7 +143,7 @@ export default defineComponent({
           })
         ) || []
       );
-      zip.save({
+      await zip.save({
         fileName: `${options.fileName}${
           zipFileTypeListRef.value.find(
             (item) => item.value === zipFileTypeRef.value
@@ -149,7 +156,7 @@ export default defineComponent({
 
     const closeModal = () => {
       context.emit("closeModal");
-      zipPercentRef.value = 0
+      zipPercentRef.value = 0;
     };
 
     return {

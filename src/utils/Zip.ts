@@ -15,10 +15,10 @@ export interface ZipOption {
 export class Zip {
   zipOptions: any = {};
   mimeString: string | undefined = "application/zip";
-  zipWritter: any
+  zipWritter: any;
   constructor(options: ZipOption | undefined = {}) {
     // console.log(options);
-    
+
     this.zipOptions = options.zipOptions || {};
     this.mimeString = options.mimeString || this.mimeString;
     this.init();
@@ -39,7 +39,7 @@ export class Zip {
     );
   }
 
-  save(
+  async save(
     saveOptions: {
       fileName?: string | undefined;
     } = {}

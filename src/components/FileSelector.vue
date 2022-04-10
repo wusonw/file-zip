@@ -58,19 +58,26 @@ export default defineComponent({
   setup(props: any, context) {
     const zipItemFileListRef = ref<ZipItemFileType[]>([]);
     const fileList = ref<any>([]);
+<<<<<<< HEAD
     const selectedFileList = ref<any>([]);
 
+=======
+>>>>>>> 29f7d139f31cbd7543131c6cf6d6fc8ae1584524
     const beforeUpload: UploadProps["beforeUpload"] = (file) => {
       fileList.value = fileList.value.filter((f: any) => f.name !== file.name);
       fileList.value = [...fileList.value, file];
       return false;
     };
 
+<<<<<<< HEAD
     const onChange = () => {
+=======
+    const onChange = (chanegd: any) => {
+>>>>>>> 29f7d139f31cbd7543131c6cf6d6fc8ae1584524
       zipItemFileListRef.value = fileList?.value?.map((f: any) => ({
         file: f,
         options: {},
-      }));
+      })) || [];
       context.emit("onFileListChange", {
         zipItemFileList: zipItemFileListRef.value,
       });
@@ -110,11 +117,14 @@ export default defineComponent({
       beforeUpload,
       onChange,
       zipItemFileListRef,
+<<<<<<< HEAD
       doneSelect,
       selectFile,
       selectedFileList,
       selectAllFiles,
       deleteSelected,
+=======
+>>>>>>> 29f7d139f31cbd7543131c6cf6d6fc8ae1584524
     };
   },
 });
