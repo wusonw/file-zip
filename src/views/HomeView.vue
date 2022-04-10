@@ -1,14 +1,20 @@
 <template>
   <div class="home">
-    <file-selector @onFileListChange="onFileListChange" />
-    <zip-download :fileList="state.fileList" />
+    <file-selector
+      @onFileListChange="onFileListChange"
+      @doneSelect="visible = true"
+    />
+    <zip-download
+      :fileList="state.fileList"
+      :visible="visible"
+      @closeModal="visible = false"
+    />
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, ref, watch } from "vue";
-import {} from "@zip.js/zip.js";
-import FileSelector, { ZipItemFileType } from "../components/FileSelector.vue";
+import { defineComponent, reactive, ref } from "vue";
+import FileSelector from "../components/FileSelector.vue";
 import ZipDownload from "../components/ZipDownload.vue";
 
 export default defineComponent({
@@ -21,12 +27,15 @@ export default defineComponent({
     const state = reactive({
       fileList: [],
     });
+
+    const visible = ref<boolean>(false);
     const onFileListChange = ({ zipItemFileList }: any) => {
       state.fileList = zipItemFileList;
     };
 
     return {
       state,
+      visible,
       onFileListChange,
     };
   },
