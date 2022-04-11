@@ -15,20 +15,25 @@ export interface ZipOption {
 export class Zip {
   zipOptions: any = {};
   mimeString: string | undefined = "application/zip";
+  blobWritter: any;
   zipWritter: any;
   constructor(options: ZipOption | undefined = {}) {
     // console.log(options);
 
     this.zipOptions = options.zipOptions || {};
     this.mimeString = options.mimeString || this.mimeString;
+    this.blobWritter = new BlobWriter(this.mimeString);
     this.init();
   }
 
   init() {
-    this.zipWritter = new ZipWriter(
-      new BlobWriter(this.mimeString),
-      this.zipOptions
-    );
+    this.blobWritter = new BlobWriter(this.mimeString);
+    this.zipWritter = new ZipWriter(this.blobWritter, this.zipOptions);
+  }
+
+  getBlobData() {
+    if(!this.blobWritter) return null
+    return this.blobWritter.getData();
   }
 
   async addFile(file: File, addOptions: ZipWriterAddDataOptions = {}) {

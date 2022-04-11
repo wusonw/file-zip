@@ -1,6 +1,6 @@
 <template>
   <div class="file-selector-container">
-    <div class="top-container">
+    <div class="upload-dragger-container">
       <a-radio-group
         class="zip-type-toggle"
         button-style="solid"
@@ -9,32 +9,30 @@
         <a-radio-button :value="false">多文件压缩</a-radio-button>
         <a-radio-button :value="true">单文件压缩</a-radio-button>
       </a-radio-group>
-      <div class="upload-dragger-container">
-        <a-upload-dragger
-          :fileList="fileList"
-          :multiple="!isSingleFile"
-          :showUploadList="false"
-          :before-upload="beforeUpload"
-        >
-          <p class="ant-upload-drag-icon">
-            <inbox-outlined />
-          </p>
-          <p>点击或拖拽上传文件</p>
-        </a-upload-dragger>
-      </div>
+      <a-upload-dragger
+        :fileList="fileList"
+        :multiple="!isSingleFile"
+        :showUploadList="false"
+        :before-upload="beforeUpload"
+      >
+        <p class="ant-upload-drag-icon">
+          <inbox-outlined />
+        </p>
+        <p>点击或拖拽上传文件</p>
+      </a-upload-dragger>
     </div>
-
-    <div v-show="!isSingleFile" class="file-list-container">
+    <div v-if="!isSingleFile" class="file-list-container">
       <a-list size="small" bordered :data-source="fileList">
         <template #renderItem="{ item }">
           <a-list-item>
+            <template #actions>
+              <span>{{ getFileSize(item.size) }}</span>
+            </template>
             <a-checkbox
               :checked="selectedFileList.includes(item)"
               @change="selectFile($event, item)"
-              ><div class="file-list-item">
-                {{ item.name }}
-                <p>{{ getFileSize(item.size) }}</p>
-              </div>
+            >
+              <span>{{ item.name }}</span>
             </a-checkbox>
           </a-list-item>
         </template>
@@ -57,15 +55,18 @@
                 :disabled="selectedFileList.length === 0"
                 ><delete-outlined />删除选中</a-button
               >
-              <a-button
-                :disabled="selectedFileList.length === 0"
-                @click="doneSelect"
-                >开始压缩</a-button
-              >
             </div>
           </div>
         </template>
       </a-list>
+    </div>
+    <div v-else>
+      {{ selectedFileList.length === 0 ? "" : selectedFileList[0].name }}
+      {{
+        selectedFileList.length === 0
+          ? ""
+          : getFileSize(selectedFileList[0].size)
+      }}
     </div>
   </div>
 </template>
@@ -74,7 +75,7 @@ import { InboxOutlined, DeleteOutlined } from "@ant-design/icons-vue";
 import { defineComponent, ref, watch } from "vue";
 import type { UploadProps } from "ant-design-vue";
 import { ZipWriterAddDataOptions } from "@zip.js/zip.js";
-import getFileSize from "@/utils/getFileSize";
+import { getFileSize } from "@/utils/utils";
 
 export interface ZipItemFileType {
   file: File;
@@ -91,7 +92,6 @@ export default defineComponent({
     const fileList = ref<any>([]);
     const selectedFileList = ref<any>([]);
     const isSingleFile = ref<boolean>(false);
-    const totalSize = ref<number>(0);
 
     const beforeUpload: UploadProps["beforeUpload"] = (file) => {
       if (isSingleFile.value && fileList.value.length > 0) {
@@ -108,13 +108,14 @@ export default defineComponent({
     };
 
     const selectFile = (e: any, file: any) => {
-      if (e.target.checked) selectedFileList.value.push(file);
-      else
-        selectedFileList.value.forEach((f: any, index: number) => {
-          if (f.name === file.name) selectedFileList.value.splice(index, 1);
-        });
-
-      // console.log(selectedFileList.value, fileList.value);
+      if (e.target.checked) {
+        selectedFileList.value = [...selectedFileList.value, file];
+        return;
+      }
+      selectedFileList.value.forEach((f: any, index: number) => {
+        if (f.name === file.name) selectedFileList.value.splice(index, 1);
+        selectedFileList.value = [...selectedFileList.value];
+      });
     };
 
     const deleteSelected = () => {
@@ -128,24 +129,15 @@ export default defineComponent({
       selectedFileList.value = e.target.checked ? fileList.value.slice(0) : [];
     };
 
-    const doneSelect = () => {
-      if (selectedFileList.value.length <= 0) {
-        alert("未选择文件");
-        return;
-      }
-
-      totalSize.value = 0;
-
+    watch(selectedFileList, () => {
       zipItemFileListRef.value =
-        selectedFileList?.value?.map((f: any) => {
-          totalSize.value += f.size;
-          return { file: f, options: {} };
-        }) || [];
-      context.emit("doneSelect", {
+        selectedFileList?.value?.map((f: any) => ({ file: f, options: {} })) ||
+        [];
+      context.emit("onFileSelectorChange", {
         zipItemFileList: zipItemFileListRef.value,
-        totalSize: getFileSize(totalSize.value),
+        isSingleFile: isSingleFile.value,
       });
-    };
+    });
 
     watch(isSingleFile, () => {
       fileList.value = [];
@@ -156,7 +148,6 @@ export default defineComponent({
       fileList,
       beforeUpload,
       zipItemFileListRef,
-      doneSelect,
       selectFile,
       selectedFileList,
       selectAllFiles,
@@ -182,13 +173,6 @@ export default defineComponent({
 }
 .upload-dragger-container {
   flex: 1;
-}
-.file-list-item {
-  align-items: center;
-  width: 700px;
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
 }
 .file-list-header {
   align-items: center;
