@@ -1,15 +1,24 @@
 <template>
   <div>
     <!-- <span>已选{{ fileList.length }}个文件，文件总大小为{{ totalSize }}</span> -->
-    <a-progress type="circle" :width="80" :percent="zipPercentRef" />
-    <a-form v-if="!isSingleFile" :model="formState" v-bind="formItemLayout">
+    <a-progress
+      v-if="isClickedZipButton"
+      type="circle"
+      :width="80"
+      :percent="zipPercentRef"
+    />
+    <a-form
+      v-if="!isSingleFile && !isClickedZipButton"
+      :model="formState"
+      @finish="onFinish"
+      v-bind="formItemLayout"
+    >
       <a-form-item name="level" label="压缩比例">
         <a-slider
           :step="10"
           :min="10"
           :max="90"
           v-model:value="formState['level']"
-          :disabled="isClickedZipButton"
         />
       </a-form-item>
 
@@ -18,16 +27,9 @@
         label="压缩包名称"
         :rules="[{ required: true, message: '请输入文件名' }]"
       >
-        <a-input
-          v-model:value="formState['fileName']"
-          :disabled="isClickedZipButton"
-        >
+        <a-input v-model:value="formState['fileName']">
           <template #addonAfter>
-            <a-select
-              :disabled="isClickedZipButton"
-              v-model:value="zipFileTypeRef"
-              style="width: 80px"
-            >
+            <a-select v-model:value="zipFileTypeRef" style="width: 80px">
               <a-select-option
                 v-for="(item, index) in zipFileTypeListRef"
                 :key="item"
@@ -41,30 +43,23 @@
 
       <a-form-item name="password" label="解压密码">
         <a-input-password
-          :disabled="isClickedZipButton"
           v-model:value="formState['password']"
           placeholder="如需设置解压密码，请输入"
         />
       </a-form-item>
 
       <a-form-item :wrapper-col="{ span: 12, offset: 6 }">
-        <a-button
-          type="primary"
-          @click="onFinish"
-          :disabled="isClickedZipButton"
-          >压缩</a-button
-        >
+        <a-button type="primary" html-type="submit">压缩</a-button>
       </a-form-item>
     </a-form>
     <a-form
-      v-else
+      v-else-if="isSingleFile && !isClickedZipButton"
       :model="formState"
       v-bind="formItemLayout"
       @finish="onFinish"
     >
       <a-form-item name="level" label="压缩比例">
         <a-slider
-          :disabled="isClickedZipButton"
           :step="10"
           :min="10"
           :max="90"
@@ -76,22 +71,14 @@
         label="文件名称"
         :rules="[{ required: true, message: '请输入文件名' }]"
       >
-        <a-input
-          :disabled="isClickedZipButton"
-          v-model:value="formState['fileName']"
-        >
+        <a-input v-model:value="formState['fileName']">
           <template #addonAfter>
-            {{ singleFileName.slice(singleFileName.lastIndexOf(".")) }}
+            {{ singleFileNameRef.slice(singleFileNameRef.lastIndexOf(".")) }}
           </template>
         </a-input>
       </a-form-item>
       <a-form-item :wrapper-col="{ span: 12, offset: 6 }">
-        <a-button
-          :disabled="isClickedZipButton"
-          type="primary"
-          html-type="submit"
-          >压缩</a-button
-        >
+        <a-button type="primary" html-type="submit">压缩</a-button>
       </a-form-item>
     </a-form>
   </div>
@@ -187,9 +174,9 @@ export default defineComponent({
               zippedData: _zipData,
               fileInfo: {
                 name: `${formState.fileName}${
-                  isSingleFile
-                    ? singleFileName.value.slice(
-                        singleFileName.value.lastIndexOf(".")
+                  isSingleFile.value
+                    ? singleFileNameRef.value.slice(
+                        singleFileNameRef.value.lastIndexOf(".")
                       )
                     : zipFileTypeListRef.value[zipFileTypeRef.value].label ||
                       ".zip"
@@ -202,12 +189,15 @@ export default defineComponent({
       }
     });
 
-    const singleFileName = ref<string>(fileList.value[0].file.name);
+    const singleFileNameRef = ref<string>(fileList.value[0].file.name);
 
     const formState = reactive<Record<string, any>>({
       level: 10,
       fileName: isSingleFile.value
-        ? singleFileName.value.slice(0, singleFileName.value.lastIndexOf("."))
+        ? singleFileNameRef.value.slice(
+            0,
+            singleFileNameRef.value.lastIndexOf(".")
+          )
         : `file_${new Date().getTime()}`,
     });
 
@@ -252,7 +242,7 @@ export default defineComponent({
       zipFileTypeRef,
       zipFileTypeListRef,
       zip,
-      singleFileName,
+      singleFileNameRef,
       showShare,
       isClickedZipButton,
     };

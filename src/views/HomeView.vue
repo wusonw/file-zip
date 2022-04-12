@@ -8,6 +8,7 @@
       开始压缩
     </a-button>
     <a-modal
+      :maskClosable="false"
       :visible="modalState.visible"
       width="100%"
       @cancel="updateModal({ visible: false })"
@@ -30,6 +31,8 @@
         </div>
       </div>
       <zip-share
+        :zipInfo="zipInfoRef"
+        @onFinish="onShareFormDone"
         v-else-if="modalContentTypeRef === ModalContentType.SHARE"
       />
     </a-modal>
@@ -37,15 +40,19 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, ref, watch } from "vue";
+import { defineComponent, h, reactive, ref, watch } from "vue";
 import FileSelector from "../components/FileSelector.vue";
 import ZipDownload, {
   ZipFileInfo,
   ZipFileProp,
   ZipState,
 } from "../components/ZipFile.vue";
+import ZipShare from "../components/ZipShare.vue";
 import { getFileSize } from "@/utils/utils";
 import { saveAs } from "file-saver";
+import { CHECK_TOKEN, SHARE_FILE } from "@/api/api";
+import { Button, notification } from "ant-design-vue";
+import router from "@/router";
 
 export enum ModalContentType {
   EMPTY = 0,
@@ -59,8 +66,32 @@ export default defineComponent({
   components: {
     FileSelector,
     ZipDownload,
+    ZipShare,
   },
   setup() {
+    CHECK_TOKEN().then((res: any) => {
+      if (!res?.checked?.checked) {
+        const key = `noTokenWarning${Date.now()}`;
+        notification.warning({
+          message: "未登录",
+          description: "未登录状态无法使用分享功能",
+          btn: () =>
+            h(
+              Button,
+              {
+                type: "primary",
+                size: "small",
+                onClick: () => {
+                  router.push("/login");
+                  notification.close(key);
+                },
+              },
+              { default: () => "去登录" }
+            ),
+          key,
+        });
+      }
+    });
     const fileState = reactive({
       fileList: [],
       isSingleFile: false,
@@ -73,7 +104,7 @@ export default defineComponent({
 
     const modalContentTypeRef = ref<ModalContentType>(ModalContentType.EMPTY);
 
-    const zipInfoRef = ref<ZipFileInfo>({});
+    const zipInfoRef = ref<ZipFileInfo>();
 
     const onFileSelectorChange = ({ zipItemFileList, isSingleFile }: any) => {
       // console.log(modalState,fileState);
@@ -87,9 +118,7 @@ export default defineComponent({
         (modalState.visible = modalOptions.visible);
       modalState.title = modalOptions.title;
     };
-    // watch(modalState,()=>{
-    //   console.log(modalState);
-    // })
+
     const startZip = () => {
       modalContentTypeRef.value = ModalContentType.ZIP;
       updateModal({ visible: true, title: "压缩" });
@@ -107,23 +136,25 @@ export default defineComponent({
     const savaToLocal = () => {
       const _data = zipInfoRef.value?.zippedData,
         _name = zipInfoRef.value?.fileInfo?.name;
+      console.log(_name);
+
       if (!_data || !_name) return;
       saveAs(_data, _name);
-      updateModal({visible:false})
+      updateModal({ visible: false });
     };
 
-    const startShare = ()=>{
+    const startShare = () => {
       modalContentTypeRef.value = ModalContentType.SHARE;
-      updateModal({visible:true,title:"分享"})
+      updateModal({ visible: true, title: "分享" });
+    };
 
-    }
+    const onShareFormDone = async () => {
+      console.log("finish");
+    };
 
     watch(modalState, () => {
-      console.log("modalstate", modalState);
-
       if (modalState.visible) return;
       modalContentTypeRef.value = ModalContentType.EMPTY;
-      zipInfoRef.value = {};
     });
 
     return {
@@ -138,7 +169,8 @@ export default defineComponent({
       startZip,
       onZipStateChange,
       savaToLocal,
-      startShare
+      startShare,
+      onShareFormDone,
     };
   },
 });

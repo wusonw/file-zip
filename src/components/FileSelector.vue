@@ -60,13 +60,16 @@
         </template>
       </a-list>
     </div>
-    <div v-else>
-      {{ selectedFileList.length === 0 ? "" : selectedFileList[0].name }}
-      {{
-        selectedFileList.length === 0
-          ? ""
-          : getFileSize(selectedFileList[0].size)
-      }}
+    <div v-else-if="isSingleFile && selectedFileList.length !== 0" class="single-file-display">
+      <div>
+        {{ selectedFileList[0].name }}
+      </div>
+      <div>
+        {{ getFileSize(selectedFileList[0].size) }}
+      </div>
+      <a-button @click="deleteSelected">
+        <delete-outlined />删除选中
+      </a-button>
     </div>
   </div>
 </template>
@@ -95,8 +98,8 @@ export default defineComponent({
 
     const beforeUpload: UploadProps["beforeUpload"] = (file) => {
       if (isSingleFile.value && fileList.value.length > 0) {
-        alert("如需压缩多文件，可选择多文件压缩");
-        return;
+        fileList.value = []
+        selectedFileList.value = []
       }
       fileList.value = fileList.value.filter((f: any) => f.name !== file.name);
       selectedFileList.value = selectedFileList.value.filter(
@@ -190,5 +193,12 @@ export default defineComponent({
 }
 .file-list-header-control * {
   margin-left: 10px;
+}
+.single-file-display {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  height: 30px;
 }
 </style>
