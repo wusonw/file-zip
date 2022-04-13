@@ -79,6 +79,8 @@ export default defineComponent({
       const shareUrl = shareInfoRef.value?.url;
       if (shareUrl) {
         window.open(shareUrl, "_blank");
+      } else {
+        notification.error({ message: "文件链接丢失" });
       }
     };
     return {

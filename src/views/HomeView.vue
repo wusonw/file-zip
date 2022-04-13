@@ -7,6 +7,7 @@
     >
       开始压缩
     </a-button>
+
     <a-modal
       :maskClosable="false"
       :visible="modalState.visible"
@@ -21,6 +22,7 @@
         :fileList="fileState.fileList"
         :isSingleFile="fileState.isSingleFile"
       />
+
       <div v-else-if="modalContentTypeRef === ModalContentType.CHOOSE">
         {{ getFileSize(zipInfoRef.originSize) }}
         <br />
@@ -30,11 +32,19 @@
           <a-button @click="startShare" type="primary">分享</a-button>
         </div>
       </div>
+
       <zip-share
         :zipInfo="zipInfoRef"
-        @onFinish="onShareFormDone"
+        @shareFileSuccess="shareFileSuccess"
         v-else-if="modalContentTypeRef === ModalContentType.SHARE"
       />
+
+      <div v-else-if="modalContentTypeRef === ModalContentType.SHARE_LINK">
+        {{ shareLinkRef }}
+        <div>
+          <a-button @click="copy" type="primary">复制文件链接</a-button>
+        </div>
+      </div>
     </a-modal>
   </div>
 </template>
@@ -59,6 +69,7 @@ export enum ModalContentType {
   ZIP = 1,
   CHOOSE = 2,
   SHARE = 3,
+  SHARE_LINK = 4,
 }
 
 export default defineComponent({
@@ -103,12 +114,10 @@ export default defineComponent({
     });
 
     const modalContentTypeRef = ref<ModalContentType>(ModalContentType.EMPTY);
-
     const zipInfoRef = ref<ZipFileInfo>();
+    const shareLinkRef = ref<any>({});
 
     const onFileSelectorChange = ({ zipItemFileList, isSingleFile }: any) => {
-      // console.log(modalState,fileState);
-
       fileState.fileList = zipItemFileList;
       fileState.isSingleFile = isSingleFile;
     };
@@ -145,11 +154,13 @@ export default defineComponent({
 
     const startShare = () => {
       modalContentTypeRef.value = ModalContentType.SHARE;
-      updateModal({ visible: true, title: "分享" });
+      updateModal({ visible: true, title: "分享设置" });
     };
 
-    const onShareFormDone = async () => {
-      console.log("finish");
+    const shareFileSuccess = async (options: any) => {
+      shareLinkRef.value = options;
+      modalContentTypeRef.value = ModalContentType.SHARE_LINK;
+      updateModal({ visible: true, title: "分享链接" });
     };
 
     watch(modalState, () => {
@@ -163,6 +174,7 @@ export default defineComponent({
       modalState,
       modalContentTypeRef,
       zipInfoRef,
+      shareLinkRef,
       getFileSize,
       onFileSelectorChange,
       updateModal,
@@ -170,7 +182,7 @@ export default defineComponent({
       onZipStateChange,
       savaToLocal,
       startShare,
-      onShareFormDone,
+      shareFileSuccess,
     };
   },
 });

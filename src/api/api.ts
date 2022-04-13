@@ -75,6 +75,7 @@ export const SHARE_FILE = async (data: any) => {
     timeout: 0,
     method: "POST",
     url: "/share/",
+    data,
     headers: {
       userid,
       token,

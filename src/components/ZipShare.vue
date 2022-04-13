@@ -41,6 +41,7 @@
 </template>
 <script lang="ts">
 import { SHARE_FILE } from "@/api/api";
+import { notification } from "ant-design-vue";
 import { defineComponent, reactive, ref, toRefs, UnwrapRef } from "vue";
 
 interface ShareState {
@@ -67,7 +68,7 @@ export default defineComponent({
     });
     const onFinish = async () => {
       const fileData: any = zipInfo.value.zippedData;
-      var reader = new FileReader();
+      const reader = new FileReader();
       reader.readAsDataURL(fileData);
       reader.onloadend = function () {
         const base64data = reader.result;
@@ -75,16 +76,18 @@ export default defineComponent({
           action: "add",
           fileData: base64data,
           fileName: zipInfo.value.fileInfo?.name,
-        }).then((res: any) => console.log(res));
+        }).then(({ shareId, creatorId }: any) => {
+          if (!shareId || !creatorId) {
+            notification.error({ message: "文件上传失败" });
+            return;
+          }
+          context.emit("shareFileSuccess", { shareId });
+          notification.success({ message: "文件上传成功" });
+        });
       };
-
-      context.emit("onFinish");
-    };
-    const closeShareModal = () => {
-      context.emit("closeShareModal");
     };
 
-    return { isLogedIn, shareState, onFinish, closeShareModal };
+    return { isLogedIn, shareState, onFinish };
   },
 });
 </script>
