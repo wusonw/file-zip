@@ -67,17 +67,15 @@ export const USER_LOGIN = async (data: any) => _post("/user/login", data);
 export const SEND_CHECK_CODE = async (data: any) => _post("/email/", data);
 
 //share
-export const SHARE_FILE = async ({ fileName, fileData }: any) => {
+export const SHARE_FILE = async (data: any) => {
   const userid = window.localStorage.getItem("userId") || "";
   const token = window.localStorage.getItem("token") || "";
-
-  const formData = new FormData();
-  formData.append("fileName", fileName);
-  formData.append("fileData", fileData);
-  return await axios.post("/share/", formData, {
+  return await axios({
     baseURL,
+    timeout: 0,
+    method: "POST",
+    url: "/share/",
     headers: {
-      "Content-Type": "multipart/form-data",
       userid,
       token,
     },

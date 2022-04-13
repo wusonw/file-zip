@@ -42,7 +42,6 @@
 <script lang="ts">
 import { SHARE_FILE } from "@/api/api";
 import { defineComponent, reactive, ref, toRefs, UnwrapRef } from "vue";
-import { ZipFileInfo } from "../components/ZipFile.vue";
 
 interface ShareState {
   password: string;
@@ -67,13 +66,18 @@ export default defineComponent({
       downloadTimes: 1,
     });
     const onFinish = async () => {
-      //   console.log("finish");
-      const fileData: any = await zipInfo.value.zippedData;
-      SHARE_FILE({
-        action: "add",
-        fileData,
-        fileName: zipInfo.value.fileInfo?.name,
-      }).then((res: any) => console.log(res));
+      const fileData: any = zipInfo.value.zippedData;
+      var reader = new FileReader();
+      reader.readAsDataURL(fileData);
+      reader.onloadend = function () {
+        const base64data = reader.result;
+        SHARE_FILE({
+          action: "add",
+          fileData: base64data,
+          fileName: zipInfo.value.fileInfo?.name,
+        }).then((res: any) => console.log(res));
+      };
+
       context.emit("onFinish");
     };
     const closeShareModal = () => {

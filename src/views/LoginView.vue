@@ -45,7 +45,6 @@
 import { SEND_CHECK_CODE, USER_LOGIN, USER_REGISTER } from "@/api/api";
 import { notification } from "ant-design-vue";
 import { defineComponent, reactive, ref } from "vue";
-//@ts-ignore
 import { MD5 } from "crypto-js";
 import { useRouter } from "vue-router";
 
