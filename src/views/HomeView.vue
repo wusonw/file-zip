@@ -1,58 +1,79 @@
 <template>
   <div class="home">
-    <file-selector @onFileSelectorChange="onFileSelectorChange" />
-    <a-button
-      :disabled="fileState.fileList.length === 0 && !modalState.visible"
-      @click="startZip"
-    >
-      开始压缩
-    </a-button>
+    <div class="start-zip-button">
+      <a-button
+        :disabled="fileState.fileList.length === 0 && !modalState.visible"
+        @click="startZip"
+      >
+        开始压缩
+      </a-button>
+    </div>
+    <div>
+      <file-selector @onFileSelectorChange="onFileSelectorChange" />
+    </div>
 
-    <a-modal
-      :maskClosable="false"
-      :visible="modalState.visible"
-      width="100%"
-      @cancel="updateModal({ visible: false })"
-      :title="modalState.title"
-      :footer="null"
-    >
-      <zip-download
-        v-if="modalContentTypeRef === ModalContentType.ZIP"
-        @onZipStateChange="onZipStateChange"
-        :fileList="fileState.fileList"
-        :isSingleFile="fileState.isSingleFile"
-      />
+    <div>
+      <a-modal
+        class="modal-container"
+        :maskClosable="false"
+        :visible="modalState.visible"
+        @cancel="updateModal({ visible: false })"
+        :title="modalState.title"
+        :footer="null"
+      >
+        <div class="modal-content">
+          <zip-file
+            v-if="modalContentTypeRef === ModalContentType.ZIP"
+            @onZipStateChange="onZipStateChange"
+            :fileList="fileState.fileList"
+            :isSingleFile="fileState.isSingleFile"
+          />
 
-      <div v-else-if="modalContentTypeRef === ModalContentType.CHOOSE">
-        {{ getFileSize(zipInfoRef.originSize) }}
-        <br />
-        {{ getFileSize(zipInfoRef.zippedSize) }}
-        <div>
-          <a-button @click="savaToLocal" type="primary">保存本地</a-button>
-          <a-button @click="startShare" type="primary">分享</a-button>
+          <div v-else-if="modalContentTypeRef === ModalContentType.CHOOSE">
+            <div class="choose-option-container">
+              <div class="share-size-info">
+                <div>
+                  <span>压缩前文件大小</span>
+                  <span>{{ getFileSize(zipInfoRef.originSize) }}</span>
+                </div>
+                <div>
+                  <span>压缩后文件大小</span>
+                  <span>{{ getFileSize(zipInfoRef.zippedSize) }}</span>
+                </div>
+              </div>
+
+              <div class="choose-type-container">
+                <div class="two-seperate-choices">
+                  <a-button @click="saveToLocal">保存</a-button>
+                  <a-button @click="startShare">分享</a-button>
+                </div>
+                <a-button @click="saveAndShare">保存后分享</a-button>
+              </div>
+            </div>
+          </div>
+
+          <zip-share
+            :zipInfo="zipInfoRef"
+            @shareFileSuccess="shareFileSuccess"
+            v-else-if="modalContentTypeRef === ModalContentType.SHARE"
+          />
+
+          <div v-else-if="modalContentTypeRef === ModalContentType.SHARE_LINK">
+            {{ shareLinkRef.shareId }}
+            <div>
+              <a-button @click="copyLink" type="primary">复制文件链接</a-button>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <zip-share
-        :zipInfo="zipInfoRef"
-        @shareFileSuccess="shareFileSuccess"
-        v-else-if="modalContentTypeRef === ModalContentType.SHARE"
-      />
-
-      <div v-else-if="modalContentTypeRef === ModalContentType.SHARE_LINK">
-        {{ shareLinkRef }}
-        <div>
-          <a-button @click="copy" type="primary">复制文件链接</a-button>
-        </div>
-      </div>
-    </a-modal>
+      </a-modal>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, h, reactive, ref, watch } from "vue";
 import FileSelector from "../components/FileSelector.vue";
-import ZipDownload, {
+import ZipFile, {
   ZipFileInfo,
   ZipFileProp,
   ZipState,
@@ -60,7 +81,7 @@ import ZipDownload, {
 import ZipShare from "../components/ZipShare.vue";
 import { getFileSize } from "@/utils/utils";
 import { saveAs } from "file-saver";
-import { CHECK_TOKEN, SHARE_FILE } from "@/api/api";
+import { baseURL, CHECK_TOKEN } from "@/api/api";
 import { Button, notification } from "ant-design-vue";
 import router from "@/router";
 
@@ -76,7 +97,7 @@ export default defineComponent({
   name: "HomeView",
   components: {
     FileSelector,
-    ZipDownload,
+    ZipFile,
     ZipShare,
   },
   setup() {
@@ -142,7 +163,7 @@ export default defineComponent({
       updateModal({ title: "选择" });
     };
 
-    const savaToLocal = () => {
+    const saveToLocal = () => {
       const _data = zipInfoRef.value?.zippedData,
         _name = zipInfoRef.value?.fileInfo?.name;
       console.log(_name);
@@ -156,11 +177,26 @@ export default defineComponent({
       modalContentTypeRef.value = ModalContentType.SHARE;
       updateModal({ visible: true, title: "分享设置" });
     };
+    const saveAndShare = () => {
+      saveToLocal();
+      startShare();
+    };
 
     const shareFileSuccess = async (options: any) => {
       shareLinkRef.value = options;
       modalContentTypeRef.value = ModalContentType.SHARE_LINK;
       updateModal({ visible: true, title: "分享链接" });
+    };
+
+    const copyLink = async () => {
+      try {
+        await navigator.clipboard.writeText(
+          `localhost:8080/share/${shareLinkRef.value.shareId}`
+        );
+        notification.success({ message: "文件链接已复制" });
+      } catch (err) {
+        notification.error({ message: "复制链接失败" });
+      }
     };
 
     watch(modalState, () => {
@@ -180,9 +216,11 @@ export default defineComponent({
       updateModal,
       startZip,
       onZipStateChange,
-      savaToLocal,
+      saveToLocal,
       startShare,
+      saveAndShare,
       shareFileSuccess,
+      copyLink,
     };
   },
 });
@@ -190,6 +228,44 @@ export default defineComponent({
 <style>
 html,
 body {
-  padding: 0 50px;
+  width: 100vw;
+  height: 100vh;
+  padding: 2vh 10vw;
+  position: relative;
+}
+
+.start-zip-button {
+  position: absolute;
+  right: 10vw;
+  transform: translate(-100% 0);
+}
+.modal-container {
+  width: 70vw;
+}
+
+.modal-content {
+  width: 100%;
+  height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.choose-option-container {
+  width: 250px;
+  display: flex;
+  flex-direction: column;
+}
+.choose-type-container {
+  height: 80px;
+  display: flex;
+  flex-direction: column;
+  margin: 20px 0;
+  justify-content: space-between;
+  align-self: center;
+}
+.choose-type-container div,
+.share-size-info div {
+  display: flex;
+  justify-content: space-around;
 }
 </style>

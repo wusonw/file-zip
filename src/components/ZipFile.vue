@@ -1,10 +1,9 @@
 <template>
   <div>
-    <!-- <span>已选{{ fileList.length }}个文件，文件总大小为{{ totalSize }}</span> -->
     <a-progress
       v-if="isClickedZipButton"
       type="circle"
-      :width="80"
+      :width="120"
       :percent="zipPercentRef"
     />
     <a-form
@@ -49,7 +48,7 @@
       </a-form-item>
 
       <a-form-item :wrapper-col="{ span: 12, offset: 6 }">
-        <a-button type="primary" html-type="submit">压缩</a-button>
+        <a-button type="primary" html-type="submit">开始压缩</a-button>
       </a-form-item>
     </a-form>
     <a-form
@@ -62,7 +61,7 @@
         <a-slider
           :step="10"
           :min="10"
-          :max="90"
+          :max="100"
           v-model:value="formState['level']"
         />
       </a-form-item>
@@ -78,7 +77,7 @@
         </a-input>
       </a-form-item>
       <a-form-item :wrapper-col="{ span: 12, offset: 6 }">
-        <a-button type="primary" html-type="submit">压缩</a-button>
+        <a-button type="primary" html-type="submit">开始压缩</a-button>
       </a-form-item>
     </a-form>
   </div>
@@ -192,7 +191,7 @@ export default defineComponent({
     const singleFileNameRef = ref<string>(fileList.value[0].file.name);
 
     const formState = reactive<Record<string, any>>({
-      level: 10,
+      level: 30,
       fileName: isSingleFile.value
         ? singleFileNameRef.value.slice(
             0,

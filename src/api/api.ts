@@ -19,7 +19,7 @@ axios.interceptors.response.use((res) => {
   }
 });
 
-const baseURL = "http://localhost:3000";
+export const baseURL = "http://localhost:3000";
 axios.defaults.maxContentLength = Infinity;
 axios.defaults.maxBodyLength = Infinity;
 

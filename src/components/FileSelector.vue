@@ -9,17 +9,21 @@
         <a-radio-button :value="false">多文件压缩</a-radio-button>
         <a-radio-button :value="true">单文件压缩</a-radio-button>
       </a-radio-group>
-      <a-upload-dragger
-        :fileList="fileList"
-        :multiple="!isSingleFile"
-        :showUploadList="false"
-        :before-upload="beforeUpload"
-      >
-        <p class="ant-upload-drag-icon">
-          <inbox-outlined />
-        </p>
-        <p>点击或拖拽上传文件</p>
-      </a-upload-dragger>
+      <div class="upload-dragger-body">
+        <a-upload-dragger
+          :fileList="fileList"
+          :multiple="!isSingleFile"
+          :showUploadList="false"
+          :before-upload="beforeUpload"
+        >
+          <div class="upload-dragger-tip">
+            <p class="ant-upload-drag-icon">
+              <inbox-outlined />
+            </p>
+            <p>点击或拖拽上传文件</p>
+          </div>
+        </a-upload-dragger>
+      </div>
     </div>
     <div v-if="!isSingleFile" class="file-list-container">
       <a-list size="small" bordered :data-source="fileList">
@@ -29,6 +33,7 @@
               <span>{{ getFileSize(item.size) }}</span>
             </template>
             <a-checkbox
+              style="overflow: hidden"
               :checked="selectedFileList.includes(item)"
               @change="selectFile($event, item)"
             >
@@ -60,16 +65,23 @@
         </template>
       </a-list>
     </div>
-    <div v-else-if="isSingleFile && selectedFileList.length !== 0" class="single-file-display">
-      <div>
-        {{ selectedFileList[0].name }}
+    <div
+      v-else-if="isSingleFile && selectedFileList.length !== 0"
+      class="single-file-display"
+    >
+      <div class="single-file-info-display">
+        <div>
+          {{ selectedFileList[0].name }}
+        </div>
+        <div>
+          {{ getFileSize(selectedFileList[0].size) }}
+        </div>
       </div>
-      <div>
-        {{ getFileSize(selectedFileList[0].size) }}
+      <div class="delete-single">
+        <a-button @click="deleteSelected">
+          <delete-outlined />删除选中
+        </a-button>
       </div>
-      <a-button @click="deleteSelected">
-        <delete-outlined />删除选中
-      </a-button>
     </div>
   </div>
 </template>
@@ -98,8 +110,8 @@ export default defineComponent({
 
     const beforeUpload: UploadProps["beforeUpload"] = (file) => {
       if (isSingleFile.value && fileList.value.length > 0) {
-        fileList.value = []
-        selectedFileList.value = []
+        fileList.value = [];
+        selectedFileList.value = [];
       }
       fileList.value = fileList.value.filter((f: any) => f.name !== file.name);
       selectedFileList.value = selectedFileList.value.filter(
@@ -163,6 +175,12 @@ export default defineComponent({
 </script>
 
 <style scoped>
+html,
+body {
+  padding: 2vh 10vw;
+  position: relative;
+}
+
 .file-selector-container {
   display: flex;
   flex-direction: column;
@@ -176,6 +194,19 @@ export default defineComponent({
 }
 .upload-dragger-container {
   flex: 1;
+}
+.upload-dragger-body {
+  margin-bottom: 10px;
+  height: 200px;
+  border-radius: 2px;
+}
+
+.upload-dragger-tip {
+  transform: translateY(50%);
+  color: #bbb;
+}
+.zip-type-toggle {
+  margin-bottom: 20px;
 }
 .file-list-header {
   align-items: center;
@@ -200,5 +231,12 @@ export default defineComponent({
   align-items: center;
   width: 100%;
   height: 30px;
+}
+.single-file-info-display {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 0 20px;
 }
 </style>
