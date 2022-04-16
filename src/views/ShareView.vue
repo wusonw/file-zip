@@ -1,9 +1,10 @@
 <template>
   <div>
     <div>
-      {{ shareInfoRef?.fileInfo?.name }}
-      {{ shareInfoRef?.fileInfo?.size }}
-      {{ shareInfoRef?.created }}
+      <div>文件名{{ shareInfoRef?.fileInfo?.fileInfo?.name }}</div>
+      <div>文件大小{{ getFileSize(shareInfoRef?.fileInfo?.zippedSize) }}</div>
+      <div>文件上传时间{{ formatTime(shareInfoRef?.created) }}</div>
+      <div>文件过期时间{{ formatTime(shareInfoRef?.expired) }}</div>
     </div>
     <div>
       <div v-if="shareStateRef === GetShareState.NOT_EXIST">文件不存在</div>
@@ -33,6 +34,7 @@ import { defineComponent } from "@vue/runtime-core";
 import { notification } from "ant-design-vue";
 import { ref } from "vue";
 import { useRoute } from "vue-router";
+import { formatTime, getFileSize } from "@/utils/utils";
 
 export enum GetShareState {
   SUCCESS = 0,
@@ -56,6 +58,8 @@ export default defineComponent({
         GET_SHARE_FILE({ shareId, password }).then(({ state, info }: any) => {
           shareStateRef.value = state;
           shareInfoRef.value = info;
+          // console.log(state, info);
+
           res(true);
         });
       });
@@ -87,6 +91,8 @@ export default defineComponent({
       shareInfoRef,
       passwordRef,
       downloadShareFile,
+      formatTime,
+      getFileSize,
     };
   },
 });
