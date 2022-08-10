@@ -1,10 +1,7 @@
 <template>
   <div class="home">
     <div class="start-zip-button">
-      <a-button
-        :disabled="fileState.fileList.length === 0 && !modalState.visible"
-        @click="startZip"
-      >
+      <a-button :disabled="fileState.fileList.length === 0 && !modalState.visible" @click="startZip">
         开始压缩
       </a-button>
     </div>
@@ -13,32 +10,22 @@
     </div>
 
     <div>
-      <a-modal
-        class="modal-container"
-        :maskClosable="false"
-        :visible="modalState.visible"
-        @cancel="updateModal({ visible: false })"
-        :title="modalState.title"
-        :footer="null"
-      >
+      <a-modal class="modal-container" :maskClosable="false" :visible="modalState.visible"
+        @cancel="updateModal({ visible: false })" :title="modalState.title" :footer="null">
         <div class="modal-content">
-          <zip-file
-            v-if="modalContentTypeRef === ModalContentType.ZIP"
-            @onZipStateChange="onZipStateChange"
-            :fileList="fileState.fileList"
-            :isSingleFile="fileState.isSingleFile"
-          />
+          <zip-file v-if="modalContentTypeRef === ModalContentType.ZIP" @onZipStateChange="onZipStateChange"
+            :fileList="fileState.fileList" :isSingleFile="fileState.isSingleFile" />
 
           <div v-else-if="modalContentTypeRef === ModalContentType.CHOOSE">
             <div class="choose-option-container">
               <div class="share-size-info">
                 <div>
                   <span>压缩前文件大小</span>
-                  <span>{{ getFileSize(zipInfoRef.originSize) }}</span>
+                  <span>{{ getFileSize(zipInfoRef?.originSize) }}</span>
                 </div>
                 <div>
                   <span>压缩后文件大小</span>
-                  <span>{{ getFileSize(zipInfoRef.zippedSize) }}</span>
+                  <span>{{ getFileSize(zipInfoRef?.zippedSize) }}</span>
                 </div>
               </div>
 
@@ -52,11 +39,8 @@
             </div>
           </div>
 
-          <zip-share
-            :zipInfo="zipInfoRef"
-            @shareFileSuccess="shareFileSuccess"
-            v-else-if="modalContentTypeRef === ModalContentType.SHARE"
-          />
+          <zip-share :zipInfo="zipInfoRef" @shareFileSuccess="shareFileSuccess"
+            v-else-if="modalContentTypeRef === ModalContentType.SHARE" />
 
           <div v-else-if="modalContentTypeRef === ModalContentType.SHARE_LINK">
             {{ shareLinkRef.shareId }}
@@ -81,7 +65,7 @@ import ZipFile, {
 import ZipShare from "../components/ZipShare.vue";
 import { getFileSize } from "@/utils/utils";
 import { saveAs } from "file-saver";
-import { baseURL, CHECK_TOKEN } from "@/api/api";
+import { CHECK_TOKEN } from "@/api/api";
 import { Button, notification } from "ant-design-vue";
 import router from "@/router";
 
@@ -155,7 +139,6 @@ export default defineComponent({
     };
 
     const onZipStateChange = (options: ZipFileProp) => {
-      console.log(options);
 
       if (options.zipState !== ZipState.FINISHED) return;
       zipInfoRef.value = options.zipInfo || {};
@@ -166,7 +149,6 @@ export default defineComponent({
     const saveToLocal = () => {
       const _data = zipInfoRef.value?.zippedData,
         _name = zipInfoRef.value?.fileInfo?.name;
-      console.log(_name);
 
       if (!_data || !_name) return;
       saveAs(_data, _name);

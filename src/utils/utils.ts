@@ -1,4 +1,4 @@
-export const getFileSize = (size: number) => {
+export const getFileSize = (size: number | undefined) => {
   if (!size) return "";
 
   const num = 1024.0; //byte

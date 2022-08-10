@@ -14,12 +14,11 @@ export interface ZipOption {
 
 export class Zip {
   zipOptions: any = {};
-  mimeString: string | undefined = "application/zip";
+  mimeString: string | undefined = "application/rar";
   blobWritter: any;
   zipWritter: any;
   constructor(options: ZipOption | undefined = {}) {
-    // console.log(options);
-
+    // 
     this.zipOptions = options.zipOptions || {};
     this.mimeString = options.mimeString || this.mimeString;
     this.blobWritter = new BlobWriter(this.mimeString);
@@ -32,8 +31,12 @@ export class Zip {
   }
 
   getBlobData() {
-    if(!this.blobWritter) return null
-    return this.blobWritter.getData();
+    if (!this.blobWritter) return new Blob()
+    const blob = new Blob(this.blobWritter.arrayBuffers, { type: this.mimeString })
+    const myFile = new File([blob], `${new Date().getTime()}`, {
+      type: blob.type,
+    });
+    return blob;
   }
 
   async addFile(file: File, addOptions: ZipWriterAddDataOptions = {}) {

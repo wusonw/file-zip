@@ -122,13 +122,12 @@ export default defineComponent({
       wrapperCol: { span: 14 },
     };
     const showShare = ref<boolean>(false);
-
     const zipPercentRef = ref<number>(0);
     const zipFileTypeRef = ref<number>(0);
     const zipFileTypeListRef = ref([
       {
-        label: ".zip",
-        value: "application/zip",
+        label: ".rar",
+        value: "application/rar",
       },
       {
         label: ".tar",
@@ -139,11 +138,16 @@ export default defineComponent({
         value: "application/octet-stream",
       },
       {
-        label: ".rar",
+        label: ".zip",
         value: "application/octet-stream",
       },
     ]);
     const zipProcessMapRef = ref<any>({});
+    const initProcessState = {
+      processOver: false,
+      promiseOver: false,
+    }
+    const processStateRef = ref<any>(initProcessState)
 
     watch(zipProcessMapRef, () => {
       if (
@@ -156,37 +160,47 @@ export default defineComponent({
           process += pro.process;
           total += pro.total;
         });
+
         zipPercentRef.value = parseInt(
           ((total === 0 ? 0 : process / total) * 100).toString()
         );
-        if (zipPercentRef.value === 100) {
-          const _zipData = zip.getBlobData();
-          const originSize = fileList.value.reduce(
-            (pre: number, cur: any) => pre + cur.file.size,
-            0
-          );
-          context.emit("onZipStateChange", {
-            zipState: ZipState.FINISHED,
-            zipInfo: {
-              originSize,
-              zippedSize: _zipData.size,
-              zippedData: _zipData,
-              fileInfo: {
-                name: `${formState.fileName}${
-                  isSingleFile.value
-                    ? singleFileNameRef.value.slice(
-                        singleFileNameRef.value.lastIndexOf(".")
-                      )
-                    : zipFileTypeListRef.value[zipFileTypeRef.value].label ||
-                      ".zip"
-                }`,
-                password: formState.password,
-              },
-            },
-          });
-        }
+
+        processStateRef.value = { ...processStateRef.value, processOver: zipPercentRef.value === 100 }
+
       }
     });
+
+    const processOver = () => {
+      const _zipData = zip.getBlobData();
+      const originSize = fileList.value.reduce(
+        (pre: number, cur: any) => pre + cur.file.size, 0
+      );
+      context.emit("onZipStateChange", {
+        zipState: ZipState.FINISHED,
+        zipInfo: {
+          originSize,
+          zippedSize: _zipData.size,
+          zippedData: _zipData,
+          fileInfo: {
+            name: `${formState.fileName}${isSingleFile.value
+              ? singleFileNameRef.value.slice(
+                singleFileNameRef.value.lastIndexOf(".")
+              )
+              : zipFileTypeListRef.value[zipFileTypeRef.value].label ||
+              ".zip"
+              }`,
+            password: formState.password,
+          },
+        },
+      });
+    }
+
+    watch(processStateRef, () => {
+      if (processStateRef.value.processOver && processStateRef.value.promiseOver) {
+        processOver()
+        processStateRef.value = initProcessState
+      }
+    })
 
     const singleFileNameRef = ref<string>(fileList.value[0].file.name);
 
@@ -194,9 +208,9 @@ export default defineComponent({
       level: 30,
       fileName: isSingleFile.value
         ? singleFileNameRef.value.slice(
-            0,
-            singleFileNameRef.value.lastIndexOf(".")
-          )
+          0,
+          singleFileNameRef.value.lastIndexOf(".")
+        )
         : `file_${new Date().getTime()}`,
     });
 
@@ -214,24 +228,26 @@ export default defineComponent({
         });
       zip.mimeString = zipFileTypeListRef.value[zipFileTypeRef.value].value;
 
-      await Promise.all(
-        fileList?.value?.map((f: any, index: number) =>
-          zip.addFile(f.file, {
-            ...f.options,
-            onprogress: (process, total) => {
-              zipProcessMapRef.value = {
-                ...zipProcessMapRef.value,
-                [index]: {
-                  process,
-                  total,
-                },
-              };
-            },
-          })
-        ) || []
-      );
-      // console.log(getfilesize(zip.getBlobData().size));
-    };
+      const promises = fileList?.value?.map((f: any, index: number) =>
+        zip.addFile(f.file, {
+          ...f.options,
+          onprogress: (process, total) => {
+            zipProcessMapRef.value = {
+              ...zipProcessMapRef.value,
+              [index]: {
+                process,
+                total,
+              },
+            };
+          },
+        })
+      ) || []
+
+      for (let i = 0; i < promises.length; i++) {
+        await promises[i]
+      }
+      processStateRef.value = { ...processStateRef.value, promiseOver: true }
+    }
 
     return {
       formState,
@@ -240,6 +256,7 @@ export default defineComponent({
       zipPercentRef,
       zipFileTypeRef,
       zipFileTypeListRef,
+      processStateRef,
       zip,
       singleFileNameRef,
       showShare,
